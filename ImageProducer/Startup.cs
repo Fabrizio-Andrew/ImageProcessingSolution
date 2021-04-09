@@ -32,7 +32,7 @@ namespace ImageProducer
         public void ConfigureServices(IServiceCollection services)
         {
 
-            //services.AddControllers();
+            services.AddControllers();
             //services.AddSwaggerGen(c =>
             //{
             //    c.SwaggerDoc("v1", new OpenApiInfo { Title = "ImageProducer", Version = "v1" });
@@ -133,7 +133,7 @@ namespace ImageProducer
             {
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Task List API");
 
-                // Serve the Swagger UI at the app's root (http://localhost:<port>)
+            // Serve the Swagger UI at the app's root (http://localhost:<port>)
                 c.RoutePrefix = string.Empty;
             });
         }
