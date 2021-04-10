@@ -6,9 +6,11 @@ using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using ImageProducer.Exceptions;
 using ImageProducer.Settings;
+using ImageProducer.DataTransferObjects;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
+using ClassLibrary.ConfigSettings;
 
 namespace ImageProducer.Repositories
 {
@@ -127,18 +129,20 @@ namespace ImageProducer.Repositories
         /// <returns>All of the blob names in a container</returns>
         /// <remarks>This does not scale, for scalability usitlize the pagaing functionaltiy
         /// to page through the blobs in t</remarks>
-        public async Task<List<string>> GetListOfBlobs(string containerName)
+        public async Task<List<BlobId>> GetListOfBlobs()
         {
-            BlobContainerClient blobContainerClient = GetBlobContainerClient(containerName);
+            BlobContainerClient blobContainerClient = GetBlobContainerClient(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME);
             var blobs = blobContainerClient.GetBlobsAsync();
 
-            List<string> blobNames = new List<string>();
+            List<BlobId> blobNames = new List<BlobId>();
 
             await foreach (var blobPage in blobs.AsPages())
             {
                 foreach (var blobItem in blobPage.Values)
                 {
-                    blobNames.Add(blobItem.Name);
+                    var blobject = new BlobId();
+                    blobject.id = blobItem.Name;
+                    blobNames.Add(blobject);
                 }
             }
             return blobNames;

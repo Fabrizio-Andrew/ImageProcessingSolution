@@ -35,15 +35,21 @@ namespace ImageProducer.Controllers
 
         [Route("api/v1/uploadedimages")]
         [HttpPost]
-        public async Task<IActionResult> UploadFile(IFormFile formFile)
+        public async Task<IActionResult> UploadFile(IFormFile fileData)
         {
 
+            // Catch submission without file data
+            if (fileData == null)
+            {
+                return StatusCode((int)HttpStatusCode.BadRequest, ErrorResponse.GenerateErrorResponse(5, null, "fileData", null));
+            }
+
             // Create a unique ID for the uploaded blob
-            string blobName = $"{Guid.NewGuid()}-{formFile.FileName}";
+            string blobName = $"{Guid.NewGuid()}-{fileData.FileName}";
 
             // Create the blob with contents of the message provided
-            using Stream stream = formFile.OpenReadStream();
-            await _storageRepository.UploadFile(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME, blobName, stream, formFile.ContentType);
+            using Stream stream = fileData.OpenReadStream();
+            await _storageRepository.UploadFile(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME, blobName, stream, fileData.ContentType);
 
             return CreatedAtRoute("GetFileByIdRoute", new { id = blobName }, null);
         }
@@ -70,6 +76,28 @@ namespace ImageProducer.Controllers
                 }
             }
             return StatusCode((int)HttpStatusCode.BadRequest, ErrorResponse.GenerateErrorResponse(5, null, "id", id));
+        }
+
+        [Route("api/v1/uploadedimages")]
+        [HttpGet]
+        public async Task<IActionResult> GetAllFiles()
+        {
+            try
+            {
+                // Get only the blobs within the specified container
+                List<BlobId> blobList = await _storageRepository.GetListOfBlobs();
+                return new ObjectResult(blobList.ToArray());
+            }
+
+            // Catch Azure Exceptions
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("InvalidResourceName"))
+                {
+                    return StatusCode((int)HttpStatusCode.BadRequest, ErrorResponse.GenerateErrorResponse(null, ex.Message, "containerName", ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME));
+                }
+                return BadRequest();
+            }
         }
     }
 }
