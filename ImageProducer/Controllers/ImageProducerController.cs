@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ImageProducer.Repositories;
+using ClassLibrary.ConfigSettings;
 
 namespace ImageProducer.Controllers
 {
@@ -36,10 +37,10 @@ namespace ImageProducer.Controllers
         {
             // Create the blob with contents of the message provided
             using Stream stream = formFile.OpenReadStream();
-            await _storageRepository.UploadFile("uploadedimages", formFile.FileName, stream, formFile.ContentType);
+            await _storageRepository.UploadFile(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME, formFile.FileName, stream, formFile.ContentType);
 
             // TO-DO: Set "uploadedimages" to a setting somewhere
-            return CreatedAtRoute("GetFileByIdRoute", new { containerName = "uploadedimages", fileName = formFile.FileName }, null);
+            return CreatedAtRoute("GetFileByIdRoute", new { containerName = ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME, fileName = formFile.FileName }, null);
         }
     }
 }

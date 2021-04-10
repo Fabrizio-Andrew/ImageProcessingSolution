@@ -102,16 +102,6 @@ namespace ImageProducer.Repositories
         }
 
         /// <summary>
-        /// Deletes file from blob storage
-        /// </summary>
-        /// <param name="fileName"></param>
-        public async Task DeleteFile(string containerName, string fileName)
-        {
-            var blob = GetBlobClient(containerName, fileName);
-            await blob.DeleteIfExistsAsync();
-        }
-
-        /// <summary>
         /// Gets the file from the blob storage
         /// </summary>
         /// <param name="fileName">The id of the blob to download</param>
