@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ImageProducer.Repositories;
 using ImageProducer.DataTransferObjects;
-using ClassLibrary.ConfigSettings;
+using SolutionSettings.ConfigSettings;
 
 namespace ImageProducer.Controllers
 {

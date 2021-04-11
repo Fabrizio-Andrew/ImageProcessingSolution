@@ -10,7 +10,7 @@ using ImageProducer.DataTransferObjects;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
-using ClassLibrary.ConfigSettings;
+using SolutionSettings.ConfigSettings;
 
 namespace ImageProducer.Repositories
 {
