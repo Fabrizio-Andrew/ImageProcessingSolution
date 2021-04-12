@@ -6,12 +6,15 @@ using System;
 using System.IO;
 using System.Net;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Linq;
 using System.Threading.Tasks;
 using ImageProducer.Repositories;
 using ImageProducer.DataTransferObjects;
 using ImageProducer.Settings;
 using ImageProducer.Jobs;
+using System.Collections;
+
 
 namespace ImageProducer.Controllers
 {
@@ -119,6 +122,20 @@ namespace ImageProducer.Controllers
                 }
                 return BadRequest();
             }
+        }
+
+        [Route("api/v1/jobs")]
+        [HttpGet]
+        public async Task<string> RetrieveAllJobs()
+        {
+            // Get list of jobs
+            var results = await _jobTable.RetrieveAllJobs();
+
+            // Make some pretty Json
+            JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true };
+            var formattedResults = System.Text.Json.JsonSerializer.Serialize(results, options);
+
+            return formattedResults;
         }
     }
 }

@@ -1,11 +1,14 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections;
 using System.Threading.Tasks;
 using ImageProducer.Jobs;
 using ImageProducer.Settings;
+using ImageProducer.DataTransferObjects;
 
 namespace ImageProducer.Jobs
 {
@@ -43,6 +46,27 @@ namespace ImageProducer.Jobs
             TableResult retrievedResult = await _table.ExecuteAsync(retrieveOperation);
 
             return retrievedResult.Result as JobEntity;
+        }
+
+        public async Task<ArrayList> RetrieveAllJobs()
+        {
+            ArrayList resultsList = new ArrayList();
+
+            foreach (JobEntity entity in await _table.ExecuteQuerySegmentedAsync(new TableQuery<JobEntity>(), null))
+            {
+                // Map relevant JobEntity attributes to JobResult class
+                JobResult jobResult = new JobResult();
+                jobResult.jobId = entity.RowKey;
+                jobResult.imageConversionMode = entity.imageConversionMode;
+                jobResult.status = entity.status;
+                jobResult.statusDescription = entity.statusDescription;
+                jobResult.imageSource = entity.imageSource;
+                jobResult.imageResult = entity.imageResult;
+
+                resultsList.Add(jobResult);
+            }
+
+            return resultsList;
         }
 
         /// <summary>
