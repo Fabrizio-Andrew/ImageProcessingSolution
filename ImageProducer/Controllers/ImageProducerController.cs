@@ -137,5 +137,40 @@ namespace ImageProducer.Controllers
 
             return formattedResults;
         }
+
+        [Route("api/v1/jobs/{id}")]
+        [HttpGet]
+        public async Task<string> RetrieveJobById([FromRoute] string id)
+        {
+            // Get the job
+            JobEntity entity = await _jobTable.RetrieveJobEntity(id);
+
+            if (entity != null)
+            {
+                // Map relevant JobEntity attributes to JobResult class
+                JobResult jobResult = new JobResult();
+                jobResult.jobId = entity.RowKey;
+                jobResult.imageConversionMode = entity.imageConversionMode;
+                jobResult.status = entity.status;
+                jobResult.statusDescription = entity.statusDescription;
+                jobResult.imageSource = entity.imageSource;
+                jobResult.imageResult = entity.imageResult;
+
+                // Make some pretty Json
+                JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true };
+                var formattedResult = JsonSerializer.Serialize(jobResult, options);
+
+                return formattedResult;
+            }
+
+            // Create error response
+            ErrorResponse errorResponse = ErrorResponse.GenerateErrorResponse(4, null, "id", id);
+
+            // Format error response
+            JsonSerializerOptions errorOptions = new JsonSerializerOptions() { WriteIndented = true };
+            var formattedError = JsonSerializer.Serialize(errorResponse, errorOptions);
+
+            return formattedError;
+        }
     }
 }
