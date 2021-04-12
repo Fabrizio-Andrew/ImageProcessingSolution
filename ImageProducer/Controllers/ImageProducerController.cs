@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Net;
@@ -9,7 +10,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using ImageProducer.Repositories;
 using ImageProducer.DataTransferObjects;
-using SolutionSettings.ConfigSettings;
+using ImageProducer.Settings;
+using ImageProducer.Jobs;
 
 namespace ImageProducer.Controllers
 {
@@ -19,10 +21,13 @@ namespace ImageProducer.Controllers
     {
 
         private readonly IStorageRepository _storageRepository;
+        private readonly IJobTable _jobTable;
 
-        public ImageProducerController(IStorageRepository storageRepository)
+
+        public ImageProducerController(IStorageRepository storageRepository, IStorageAccountSettings storageAccountSettings)
         {
             _storageRepository = storageRepository;
+            _jobTable = new JobTable(storageAccountSettings);
         }
 
         /// <summary>
@@ -35,7 +40,7 @@ namespace ImageProducer.Controllers
 
         [Route("api/v1/uploadedimages")]
         [HttpPost]
-        public async Task<IActionResult> UploadFile(IFormFile fileData)
+        public async Task<IActionResult> UploadFile(IFormFile fileData, [FromQuery] int imageConversionMode)
         {
 
             // Catch submission without file data
@@ -44,12 +49,28 @@ namespace ImageProducer.Controllers
                 return StatusCode((int)HttpStatusCode.BadRequest, ErrorResponse.GenerateErrorResponse(5, null, "fileData", null));
             }
 
+            // Catch submission without imageConversionMode specified via querystring
+            if (imageConversionMode == null)
+            {
+                return StatusCode((int)HttpStatusCode.BadRequest, ErrorResponse.GenerateErrorResponse(5, null, "imageConversionMode", null));
+            }
+
             // Create a unique ID for the uploaded blob
             string blobName = $"{Guid.NewGuid()}-{fileData.FileName}";
 
             // Create the blob with contents of the message provided
             using Stream stream = fileData.OpenReadStream();
             await _storageRepository.UploadFile(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME, blobName, stream, fileData.ContentType);
+
+            // Assign a GUID tot the job
+            string jobId = Guid.NewGuid().ToString();
+
+            // Set the URI for the blob in the jobs table
+            var uri = $"api/v1/uploadedimages/ + {blobName}";
+
+            // Create the table entity
+            await _jobTable.InsertOrReplaceJobEntity(jobId, status: 1, message: "Blob received.", imageSource: uri, imageConversionMode);
+
 
             return CreatedAtRoute("GetFileByIdRoute", new { id = blobName }, null);
         }

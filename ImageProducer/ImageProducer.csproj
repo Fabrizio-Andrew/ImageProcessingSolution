@@ -4,15 +4,20 @@
     <TargetFramework>net5.0</TargetFramework>
     <UserSecretsId>81589301-4c46-4dfc-b2b6-17ba31b11f8b</UserSecretsId>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.8.0" />
     <PackageReference Include="Microsoft.Azure.Storage.Blob" Version="11.2.2" />
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="3.0.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="5.6.3" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\ClassLibrary\SolutionSettings.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+	    <None Update="host.json">
+		    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    </None>
+	    <None Update="local.settings.json">
+		    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		    <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+	    </None>
+    </ItemGroup>
 
 </Project>

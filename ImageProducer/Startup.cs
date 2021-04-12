@@ -16,6 +16,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ImageProducer.Settings;
 using ImageProducer.Repositories;
+using ImageProducer.Jobs;
 
 namespace ImageProducer
 {
@@ -47,6 +48,7 @@ namespace ImageProducer
 
             // Configure Repositories
             services.AddScoped(typeof(IStorageRepository), typeof(StorageRepository));
+            services.AddScoped(typeof(IJobTable), typeof(JobTable));
         }
 
 
