@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
@@ -24,12 +26,14 @@ namespace ImageProducer.Controllers
     {
 
         private readonly IStorageRepository _storageRepository;
+        private readonly IStorageAccountSettings _storageAccountSettings;
         private readonly IJobTable _jobTable;
 
 
         public ImageProducerController(IStorageRepository storageRepository, IStorageAccountSettings storageAccountSettings)
         {
             _storageRepository = storageRepository;
+            _storageAccountSettings = storageAccountSettings;
             _jobTable = new JobTable(storageAccountSettings);
         }
 
@@ -74,6 +78,8 @@ namespace ImageProducer.Controllers
             // Create the table entity
             await _jobTable.InsertOrReplaceJobEntity(jobId, status: 1, message: "Blob received.", imageSource: uri, imageConversionMode);
 
+            // Add the jobId to queue
+            await AddQueueMessage(jobId);
 
             return CreatedAtRoute("GetFileByIdRoute", new { id = blobName }, null);
         }
@@ -171,6 +177,31 @@ namespace ImageProducer.Controllers
             var formattedError = JsonSerializer.Serialize(errorResponse, errorOptions);
 
             return formattedError;
+        }
+
+        /// <summary>
+        /// Creates the queue (if not already created) and Adds the queue message.
+        /// </summary>
+        /// <param name="queuedMessageText">The queue text message to put into the queue</param>
+        /// <returns></returns>
+        private async Task AddQueueMessage(string queuedMessageText)
+        {
+            // Retrieve storage account from connection string.
+            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(_storageAccountSettings.StorageAccountConnectionString);
+
+            // Create the queue client.
+            CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
+
+            // Retrieve a reference to a queue.
+            CloudQueue queue = queueClient.GetQueueReference(ConfigSettings.IMAGEJOBS_QUEUE_NAME);
+
+            // Create the queue if it doesn't already exist.
+            await queue.CreateIfNotExistsAsync();
+
+            // Create a message and add it to the queue.
+            CloudQueueMessage message = new CloudQueueMessage(queuedMessageText);
+
+            await queue.AddMessageAsync(message);
         }
     }
 }

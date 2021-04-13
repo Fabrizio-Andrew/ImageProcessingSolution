@@ -71,7 +71,7 @@ namespace ImageConsumer
             CloudQueueClient queueClient = storageAccount.CreateCloudQueueClient();
 
             // Retrieve a reference to a queue.
-            CloudQueue queue = queueClient.GetQueueReference(ConfigSettings.IMAGE_QUEUE_NAME);
+            CloudQueue queue = queueClient.GetQueueReference(ConfigSettings.IMAGEJOBS_QUEUE_NAME);
 
             // Create the queue if it doesn't already exist.
             queue.CreateIfNotExists();

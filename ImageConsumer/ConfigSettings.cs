@@ -8,6 +8,6 @@
 
         public const string IMAGEJOBS_PARTITIONKEY = "imageconversions";
 
-        public const string IMAGE_QUEUE_NAME = "imagestoprocessqueue";
+        public const string IMAGEJOBS_QUEUE_NAME = "imagestoprocessqueue";
     }
 }

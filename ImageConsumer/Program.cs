@@ -23,7 +23,7 @@ namespace ImageConsumer
 
             var host = new JobHost(config);
 
-            host.Call(typeof(Functions).GetMethod("ProcessQueueMessageOnDemand"));
+            host.Call(typeof(Functions).GetMethod("ProcessJobsOnDemand"));
             // The following code ensures that the WebJob will be running continuously
             //host.RunAndBlock();
         }

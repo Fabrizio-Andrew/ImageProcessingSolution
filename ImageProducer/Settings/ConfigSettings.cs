@@ -7,5 +7,8 @@
         public const string JOBS_TABLENAME = "imageconversionjobs";
 
         public const string IMAGEJOBS_PARTITIONKEY = "imageconversions";
+
+        public const string IMAGEJOBS_QUEUE_NAME = "imagestoprocessqueue";
+
     }
 }
