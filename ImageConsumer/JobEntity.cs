@@ -17,6 +17,6 @@ namespace ImageConsumer.Jobs
 
         public string imageSource { get; set; }
 
-        public string imageResult { get; set; }
+        //public string imageResult { get; set; }
     }
 }

@@ -12,7 +12,7 @@ namespace ImageConsumer
     {
         // Please set the following connection strings in app.config for this WebJob to run:
         // AzureWebJobsDashboard and AzureWebJobsStorage
-        static void Main()
+        static async Task Main()
         {
             var config = new JobHostConfiguration();
 
@@ -23,7 +23,7 @@ namespace ImageConsumer
 
             var host = new JobHost(config);
 
-            host.Call(typeof(Functions).GetMethod("ProcessJobsOnDemand"));
+            await host.CallAsync(typeof(Functions).GetMethod("ProcessJobsOnDemand"));
             // The following code ensures that the WebJob will be running continuously
             //host.RunAndBlock();
         }

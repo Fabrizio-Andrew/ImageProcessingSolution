@@ -26,52 +26,64 @@ namespace ImageConsumer
         // This function will get triggered/executed when a new message is written 
         // on an Azure Queue called queue.
         [NoAutomaticTrigger]
-        public async void ProcessJobsOnDemand(TextWriter log)
+        public async Task ProcessJobsOnDemand(TextWriter log)
         {
             log.WriteLine("Job Started");
-
-            // Retrieve storage account from connection string.
-            log.WriteLine("Accessing Storage Account...");
-            CloudStorageAccount storageAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings["AzureWebJobsStorage"].ConnectionString);
-
-            // Get the Queue client
-            CloudQueue queue = GetCloudQueue(storageAccount);
-
-            // Create the table client
-            var tableClient = storageAccount.CreateCloudTableClient();
-
-            // Create the CloudTable object for the "jobs" table
-            CloudTable table = tableClient.GetTableReference(ConfigSettings.JOBS_TABLENAME);
-
-            // Create a blob client
-            CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
-
-            // Create or retrieve a reference to the uploaded images container
-            log.WriteLine("Setting up containers...");
-            CloudBlobContainer uploadedImagesContainer = blobClient.GetContainerReference(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME);
-            await uploadedImagesContainer.CreateIfNotExistsAsync();
-
-            // Create or retrieve a reference to the converted images container
-            CloudBlobContainer convertedImagesContainer = blobClient.GetContainerReference(ConfigSettings.CONVERTED_IMAGES_CONTAINERNAME);
-            await convertedImagesContainer.CreateIfNotExistsAsync();
-
-
-            // Get the first message from queue
-
-            CloudQueueMessage message = await queue.GetMessageAsync();
-            while (message != null)
+            try
             {
-                JobEntity job = await RetrieveJobEntity(table, message.AsString);
 
-                // Retrieve the blob name from the imageSource url string
-                string[] urlSplit = job.imageSource.Split('/');
-                string blobName = urlSplit[3];
+                // Retrieve storage account from connection string.
+                log.WriteLine("Accessing Storage Account...");
+                CloudStorageAccount storageAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings["AzureWebJobsStorage"].ConnectionString);
 
-                // Convert the image represented in the retrieved result
-                await ConvertAndStoreImage(storageAccount, blobName, job.imageConversionMode, message.AsString, job.imageSource);
+                // Get the Queue client
+                CloudQueue queue = GetCloudQueue(storageAccount);
 
-                // Get the next message from queue
-                message = await queue.GetMessageAsync();
+                // Create the table client
+                var tableClient = storageAccount.CreateCloudTableClient();
+
+                // Create the CloudTable object for the "jobs" table
+                CloudTable table = tableClient.GetTableReference(ConfigSettings.JOBS_TABLENAME);
+
+                // Create a blob client
+                CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+                // Create or retrieve a reference to the uploaded images container
+                log.WriteLine("Setting up containers...");
+                CloudBlobContainer uploadedImagesContainer = blobClient.GetContainerReference(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME);
+                await uploadedImagesContainer.CreateIfNotExistsAsync();
+
+                // Create or retrieve a reference to the converted images container
+                CloudBlobContainer convertedImagesContainer = blobClient.GetContainerReference(ConfigSettings.CONVERTED_IMAGES_CONTAINERNAME);
+                await convertedImagesContainer.CreateIfNotExistsAsync();
+
+
+                // Get the first message from queue
+
+                CloudQueueMessage message = await queue.GetMessageAsync();
+                while (message != null)
+                {
+
+                    // Retrieve the table entry for the job
+                    TableOperation retrieveOperation = TableOperation.Retrieve<JobEntity>(ConfigSettings.IMAGEJOBS_PARTITIONKEY, message.AsString);
+                    TableResult retrievedResult = table.ExecuteAsync(retrieveOperation).ConfigureAwait(false).GetAwaiter().GetResult();
+
+                    JobEntity job = retrievedResult.Result as JobEntity;
+
+                    // Retrieve the blob name from the imageSource url string
+                    string[] urlSplit = job.imageSource.Split('/');
+                    string blobName = urlSplit[3];
+
+                    // Convert the image represented in the retrieved result
+                    await ConvertAndStoreImage(storageAccount, blobName, job.imageConversionMode, message.AsString, job.imageSource);
+
+                    // Get the next message from queue
+                    message = await queue.GetMessageAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                log.WriteLine(ex);
             }
         }
 
@@ -102,7 +114,7 @@ namespace ImageConsumer
             {
                 jobEntityToReplace.status = status;
                 jobEntityToReplace.statusDescription = message;
-                jobEntityToReplace.imageResult = imageResult;
+                //jobEntityToReplace.imageResult = imageResult;
 
                 // Update the Job Entity
                 TableOperation replaceOperation = TableOperation.Replace(jobEntityToReplace);
@@ -217,19 +229,6 @@ namespace ImageConsumer
             {
                 //await StoreFailedImage(log, uploadedImage, blobName, failedImagesContainer, convertedBlobName: convertedBlobName, jobId: jobId);
             }
-        }
-
-        /// <summary>
-        /// Retrieves the job entity.
-        /// </summary>
-        /// <param name="jobId">The job identifier.</param>
-        /// <returns>JobEntity.</returns>
-        public async Task<JobEntity> RetrieveJobEntity(CloudTable table, string jobId)
-        {
-            TableOperation retrieveOperation = TableOperation.Retrieve(ConfigSettings.IMAGEJOBS_PARTITIONKEY, jobId);
-            var retrievedResult = table.Execute(retrieveOperation);
-            
-            return retrievedResult.Result as JobEntity;
         }
     }
 }

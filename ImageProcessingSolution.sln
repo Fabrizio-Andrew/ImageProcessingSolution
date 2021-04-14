@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageProducer", "ImageProducer\ImageProducer.csproj", "{C75980C9-DC81-44C1-A5A0-9BD235C8CE89}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImageConsumer", "ImageConsumer\ImageConsumer.csproj", "{96F1F89C-420E-4623-BAAC-3A0CD612D163}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageConsumer", "ImageConsumer\ImageConsumer.csproj", "{96F1F89C-420E-4623-BAAC-3A0CD612D163}"
+EndProject
+Project("{151D2E53-A2C4-4D7D-83FE-D05416EBD58E}") = "LogicAppScheduler", "LogicAppScheduler\LogicAppScheduler.deployproj", "{223EFE9C-1606-4E39-B5F3-EBCBF39D124C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{96F1F89C-420E-4623-BAAC-3A0CD612D163}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{96F1F89C-420E-4623-BAAC-3A0CD612D163}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{96F1F89C-420E-4623-BAAC-3A0CD612D163}.Release|Any CPU.Build.0 = Release|Any CPU
+		{223EFE9C-1606-4E39-B5F3-EBCBF39D124C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{223EFE9C-1606-4E39-B5F3-EBCBF39D124C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{223EFE9C-1606-4E39-B5F3-EBCBF39D124C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{223EFE9C-1606-4E39-B5F3-EBCBF39D124C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
