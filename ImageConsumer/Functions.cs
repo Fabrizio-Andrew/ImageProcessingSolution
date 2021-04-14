@@ -7,8 +7,15 @@ using System.Text;
 using System.Configuration;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 using Microsoft.WindowsAzure.Storage.Queue;
 using Microsoft.WindowsAzure.Storage.Table;
+using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
+using ImageProcessor;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.PixelFormats;
 using ImageConsumer.Jobs;
 using ImageConsumer.Settings;
 
@@ -19,14 +26,58 @@ namespace ImageConsumer
         // This function will get triggered/executed when a new message is written 
         // on an Azure Queue called queue.
         [NoAutomaticTrigger]
-        public static void ProcessJobsOnDemand(TextWriter log)
+        public async void ProcessJobsOnDemand(TextWriter log)
         {
+            log.WriteLine("Job Started");
+
             // Retrieve storage account from connection string.
+            log.WriteLine("Accessing Storage Account...");
             CloudStorageAccount storageAccount = CloudStorageAccount.Parse(ConfigurationManager.ConnectionStrings["AzureWebJobsStorage"].ConnectionString);
 
+            // Get the Queue client
             CloudQueue queue = GetCloudQueue(storageAccount);
 
-            //While loop - until no more messages
+            // Create the table client
+            var tableClient = storageAccount.CreateCloudTableClient();
+
+            // Create the CloudTable object for the "jobs" table
+            var table = tableClient.GetTableReference(ConfigSettings.JOBS_TABLENAME);
+
+            // Create a blob client
+            CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
+
+            // Create or retrieve a reference to the uploaded images container
+            log.WriteLine("Setting up containers...");
+            CloudBlobContainer uploadedImagesContainer = blobClient.GetContainerReference(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME);
+            await uploadedImagesContainer.CreateIfNotExistsAsync();
+
+            // Create or retrieve a reference to the converted images container
+            CloudBlobContainer convertedImagesContainer = blobClient.GetContainerReference(ConfigSettings.CONVERTED_IMAGES_CONTAINERNAME);
+            await convertedImagesContainer.CreateIfNotExistsAsync();
+
+
+            // Get the first message from queue
+
+            CloudQueueMessage message = await queue.GetMessageAsync();
+            while (message != null)
+            {
+                //log.WriteLine($"Processing Job: {message.AsString}");
+
+                // Retrieve the specified entity from Storage Table based on the jobId from queue message
+                TableOperation retrieveOperation = TableOperation.Retrieve<JobEntity>(ConfigSettings.IMAGEJOBS_PARTITIONKEY, message.AsString);
+                TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);//.ConfigureAwait(false).GetAwaiter().GetResult();
+                JobEntity job = retrievedResult.Result as JobEntity;
+
+                // Retrieve the blob name from the imageSource url string
+                string[] urlSplit = job.imageSource.Split('/');
+                string blobName = urlSplit[4];
+
+                // Convert the image represented in the retrieved result
+                await ConvertAndStoreImage(storageAccount, blobName, job.imageConversionMode, message.AsString, job.imageSource);
+
+                // Get the next message from queue
+                message = await queue.GetMessageAsync();
+            }
         }
 
 
@@ -37,7 +88,7 @@ namespace ImageConsumer
         /// <param name="status">The status.</param>
         /// <param name="message">The message.</param>
         /// <param name="imageResult">The url string for the converted/failed image.</param>
-        public async Task UpdateJobEntityStatus(CloudStorageAccount storageAccount, string jobId, int status, string message, string imageResult)
+        public static async Task UpdateJobEntityStatus(CloudStorageAccount storageAccount, string jobId, int status, string message, string imageResult)
         {
 
             // Create the table client.
@@ -78,6 +129,99 @@ namespace ImageConsumer
 
             return queue;
 
+        }
+
+
+        /// <summary>
+        /// Converts and stores the image.
+        /// </summary>
+        /// <param name="log"></param>
+        /// <param name="uploadedImage"></param>
+        /// <param name="convertedImagesContainer"></param>
+        /// <param name="blobName"></param>
+        /// <param name="failedImagesContainer"></param>
+        /// <param name="jobId"></param>
+        /// <param name="imageSource"></param>
+        private static async Task ConvertAndStoreImage(CloudStorageAccount storageAccount, string blobName, int imageConversionMode, string jobId, string imageSource)
+        {
+            string convertedBlobName = $"{Guid.NewGuid()}-{blobName}";
+
+            try
+            {
+                // Update Job Status - about to convert image
+                await UpdateJobEntityStatus(storageAccount, jobId, 2, "Processing blob.", imageSource);
+
+                //(MemoryStream memoryStream, string contentType) = await _storageRepository.GetFileAsync(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME, id);
+
+                // Get the Blob Container Client
+                BlobServiceClient blobServiceClient = new BlobServiceClient(ConfigurationManager.ConnectionStrings["AzureWebJobsStorage"].ConnectionString);
+                BlobContainerClient blobContainerClient = blobServiceClient.GetBlobContainerClient(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME);
+
+                // Get the Blob Client for the specified blob
+                BlobClient blobClient = blobContainerClient.GetBlobClient(blobName);
+                BlobDownloadInfo blobDownloadInfo = await blobClient.DownloadAsync();
+
+                // Set up blob stream
+                using (MemoryStream inStream = new MemoryStream())
+                {
+                    await blobDownloadInfo.Content.CopyToAsync(inStream);
+                    inStream.Position = 0;
+
+                    // Convert the image based on the imageConversionMode
+                    using (MemoryStream outStream = new MemoryStream())
+                    {
+                        using (ImageFactory imageFactory = new ImageFactory(preserveExifData: true))
+                        {
+
+                            switch (imageConversionMode)
+                            {
+                                case 1:
+                                    {
+                                        imageFactory.Load(inStream)
+                                                    .Filter(ImageProcessor.Imaging.Filters.Photo.MatrixFilters.GreyScale)
+                                                    .Save(outStream);
+                                        break;
+                                    }
+                                case 2:
+                                    {
+                                        imageFactory.Load(inStream)
+                                                    .Filter(ImageProcessor.Imaging.Filters.Photo.MatrixFilters.Sepia)
+                                                    .Save(outStream);
+                                        break;
+                                    }
+                                case 3:
+                                    {
+                                        imageFactory.Load(inStream)
+                                                    .Filter(ImageProcessor.Imaging.Filters.Photo.MatrixFilters.Comic)
+                                                    .Save(outStream);
+                                        break;
+                                    }
+                            }
+
+                            outStream.Seek(0, SeekOrigin.Begin);
+
+                            // Create a blob client
+                            CloudBlobClient cloudBlobClient = storageAccount.CreateCloudBlobClient();
+
+                            // Create or retrieve a reference to the converted images container
+                            CloudBlobContainer convertedImagesContainer = cloudBlobClient.GetContainerReference(ConfigSettings.CONVERTED_IMAGES_CONTAINERNAME);
+                            bool created = await convertedImagesContainer.CreateIfNotExistsAsync();
+
+                            CloudBlockBlob convertedBlockBlob = convertedImagesContainer.GetBlockBlobReference(convertedBlobName);
+
+                            //convertedBlockBlob.Metadata.Add(ConfigSettings.JOBID_METADATA_NAME, jobId);
+
+                            // Upload the converted blob to the converted images container
+                            convertedBlockBlob.Properties.ContentType = System.Net.Mime.MediaTypeNames.Image.Jpeg;
+                            await convertedBlockBlob.UploadFromStreamAsync(outStream);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                //await StoreFailedImage(log, uploadedImage, blobName, failedImagesContainer, convertedBlobName: convertedBlobName, jobId: jobId);
+            }
         }
     }
 }
