@@ -73,7 +73,7 @@ namespace ImageProducer.Controllers
             string jobId = Guid.NewGuid().ToString();
 
             // Set the URI for the blob in the jobs table
-            var uri = $"api/v1/uploadedimages/ + {blobName}";
+            var uri = "api/v1/uploadedimages/" + blobName;
 
             // Create the table entity
             await _jobTable.InsertOrReplaceJobEntity(jobId, status: 1, message: "Blob received.", imageSource: uri, imageConversionMode);

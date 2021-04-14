@@ -41,7 +41,7 @@ namespace ImageConsumer
             var tableClient = storageAccount.CreateCloudTableClient();
 
             // Create the CloudTable object for the "jobs" table
-            var table = tableClient.GetTableReference(ConfigSettings.JOBS_TABLENAME);
+            CloudTable table = tableClient.GetTableReference(ConfigSettings.JOBS_TABLENAME);
 
             // Create a blob client
             CloudBlobClient blobClient = storageAccount.CreateCloudBlobClient();
@@ -61,16 +61,11 @@ namespace ImageConsumer
             CloudQueueMessage message = await queue.GetMessageAsync();
             while (message != null)
             {
-                //log.WriteLine($"Processing Job: {message.AsString}");
-
-                // Retrieve the specified entity from Storage Table based on the jobId from queue message
-                TableOperation retrieveOperation = TableOperation.Retrieve<JobEntity>(ConfigSettings.IMAGEJOBS_PARTITIONKEY, message.AsString);
-                TableResult retrievedResult = await table.ExecuteAsync(retrieveOperation);//.ConfigureAwait(false).GetAwaiter().GetResult();
-                JobEntity job = retrievedResult.Result as JobEntity;
+                JobEntity job = await RetrieveJobEntity(table, message.AsString);
 
                 // Retrieve the blob name from the imageSource url string
                 string[] urlSplit = job.imageSource.Split('/');
-                string blobName = urlSplit[4];
+                string blobName = urlSplit[3];
 
                 // Convert the image represented in the retrieved result
                 await ConvertAndStoreImage(storageAccount, blobName, job.imageConversionMode, message.AsString, job.imageSource);
@@ -142,7 +137,7 @@ namespace ImageConsumer
         /// <param name="failedImagesContainer"></param>
         /// <param name="jobId"></param>
         /// <param name="imageSource"></param>
-        private static async Task ConvertAndStoreImage(CloudStorageAccount storageAccount, string blobName, int imageConversionMode, string jobId, string imageSource)
+        public static async Task ConvertAndStoreImage(CloudStorageAccount storageAccount, string blobName, int imageConversionMode, string jobId, string imageSource)
         {
             string convertedBlobName = $"{Guid.NewGuid()}-{blobName}";
 
@@ -222,6 +217,19 @@ namespace ImageConsumer
             {
                 //await StoreFailedImage(log, uploadedImage, blobName, failedImagesContainer, convertedBlobName: convertedBlobName, jobId: jobId);
             }
+        }
+
+        /// <summary>
+        /// Retrieves the job entity.
+        /// </summary>
+        /// <param name="jobId">The job identifier.</param>
+        /// <returns>JobEntity.</returns>
+        public async Task<JobEntity> RetrieveJobEntity(CloudTable table, string jobId)
+        {
+            TableOperation retrieveOperation = TableOperation.Retrieve(ConfigSettings.IMAGEJOBS_PARTITIONKEY, jobId);
+            var retrievedResult = table.Execute(retrieveOperation);
+            
+            return retrievedResult.Result as JobEntity;
         }
     }
 }

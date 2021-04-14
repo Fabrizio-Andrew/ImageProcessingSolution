@@ -1,5 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk;Microsoft.NET.Sdk.Publish">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net472</TargetFramework>
@@ -7,7 +6,6 @@
     <WebJobName>$(AssemblyName)</WebJobName>
     <WebJobType>Continuous</WebJobType>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Azure.Storage.Blobs" Version="12.8.0" />
     <PackageReference Include="ImageProcessor" Version="2.9.1" />
@@ -19,16 +17,16 @@
     <PackageReference Include="Microsoft.Data.Services.Client" Version="5.8.4" />
     <PackageReference Include="Microsoft.WindowsAzure.ConfigurationManager" Version="3.2.1" />
     <PackageReference Include="WindowsAzure.Storage" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Core" Version="1.1.2" />    
+    <PackageReference Include="Microsoft.Azure.WebJobs.Core" Version="1.1.2" />
     <PackageReference Include="Microsoft.Azure.WebJobs" Version="1.1.2" />
     <PackageReference Include="Microsoft.Azure.KeyVault.Core" Version="1.0.0" />
   </ItemGroup>
-	<ItemGroup>
-		<Reference Include="System.Configuration" />
-	</ItemGroup>
-	<ItemGroup>
-		<None Update="Settings.job">
-			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
-		</None>
-	</ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.Configuration" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Update="Settings.job">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
