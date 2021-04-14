@@ -160,7 +160,6 @@ namespace ImageProducer.Controllers
                 jobResult.status = entity.status;
                 jobResult.statusDescription = entity.statusDescription;
                 jobResult.imageSource = entity.imageSource;
-                jobResult.imageResult = entity.imageResult;
 
                 // Make some pretty Json
                 JsonSerializerOptions options = new JsonSerializerOptions() { WriteIndented = true };

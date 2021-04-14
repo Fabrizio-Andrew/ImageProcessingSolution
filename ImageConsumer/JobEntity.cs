@@ -16,7 +16,5 @@ namespace ImageConsumer.Jobs
         public string statusDescription { get; set; }
 
         public string imageSource { get; set; }
-
-        //public string imageResult { get; set; }
     }
 }

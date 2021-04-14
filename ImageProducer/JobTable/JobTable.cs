@@ -61,7 +61,6 @@ namespace ImageProducer.Jobs
                 jobResult.status = entity.status;
                 jobResult.statusDescription = entity.statusDescription;
                 jobResult.imageSource = entity.imageSource;
-                jobResult.imageResult = entity.imageResult;
 
                 resultsList.Add(jobResult);
             }
@@ -100,7 +99,6 @@ namespace ImageProducer.Jobs
             {
                 jobEntityToReplace.status = status;
                 jobEntityToReplace.statusDescription = message;
-                jobEntityToReplace.imageResult = imageResult;
                 await UpdateJobEntity(jobEntityToReplace);
             }
         }

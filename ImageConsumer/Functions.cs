@@ -77,6 +77,9 @@ namespace ImageConsumer
                     // Convert the image represented in the retrieved result
                     await ConvertAndStoreImage(storageAccount, blobName, job.imageConversionMode, message.AsString, job.imageSource);
 
+                    // Delete the queue message
+                    await queue.DeleteMessageAsync(message);
+
                     // Get the next message from queue
                     message = await queue.GetMessageAsync();
                 }
@@ -95,7 +98,7 @@ namespace ImageConsumer
         /// <param name="status">The status.</param>
         /// <param name="message">The message.</param>
         /// <param name="imageResult">The url string for the converted/failed image.</param>
-        public static async Task UpdateJobEntityStatus(CloudStorageAccount storageAccount, string jobId, int status, string message, string imageResult)
+        public static async Task UpdateJobEntityStatus(CloudStorageAccount storageAccount, string jobId, int status, string message)
         {
 
             // Create the table client.
@@ -114,7 +117,6 @@ namespace ImageConsumer
             {
                 jobEntityToReplace.status = status;
                 jobEntityToReplace.statusDescription = message;
-                //jobEntityToReplace.imageResult = imageResult;
 
                 // Update the Job Entity
                 TableOperation replaceOperation = TableOperation.Replace(jobEntityToReplace);
@@ -156,7 +158,7 @@ namespace ImageConsumer
             try
             {
                 // Update Job Status - about to convert image
-                await UpdateJobEntityStatus(storageAccount, jobId, 2, "Processing blob.", imageSource);
+                await UpdateJobEntityStatus(storageAccount, jobId, 2, "Job is running.");
 
                 //(MemoryStream memoryStream, string contentType) = await _storageRepository.GetFileAsync(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME, id);
 
@@ -221,13 +223,17 @@ namespace ImageConsumer
                             // Upload the converted blob to the converted images container
                             convertedBlockBlob.Properties.ContentType = System.Net.Mime.MediaTypeNames.Image.Jpeg;
                             await convertedBlockBlob.UploadFromStreamAsync(outStream);
+
+                            // Update Job Status - image converted successfully
+                            await UpdateJobEntityStatus(storageAccount, jobId, 3, "Job completed with success.");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                //await StoreFailedImage(log, uploadedImage, blobName, failedImagesContainer, convertedBlobName: convertedBlobName, jobId: jobId);
+                // Update Job Status - image conversion failed
+                await UpdateJobEntityStatus(storageAccount, jobId, 4, ex.Message);
             }
         }
     }
