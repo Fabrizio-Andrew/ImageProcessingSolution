@@ -77,9 +77,14 @@
               "type": "Http",
               "inputs": {
                 "method": "POST",
-                "uri": "https://imageconsumer20210414112839.azurewebsites.net/api/triggeredwebjobs/ImageConsumer/run",
+                "uri": "https://imageconsumer20210414112839.scm.azurewebsites.net/api/triggeredwebjobs/ImageConsumer/run",
                 "headers": {
-                  "Authorization": "Basic [$ImageConsumer20210414112839:DPQkJms7XGvFPxhYtoG8CtgGko1m6qdR8tXaPcLNef1cpGGMqt3rCfjk6uFz]"
+                  "Authorization": "DPQkJms7XGvFPxhYtoG8CtgGko1m6qdR8tXaPcLNef1cpGGMqt3rCfjk6uFz"
+                },
+                "authentication": {
+                  "type": "Basic",
+                  "username": "$ImageConsumer20210414112839",
+                  "password": "DPQkJms7XGvFPxhYtoG8CtgGko1m6qdR8tXaPcLNef1cpGGMqt3rCfjk6uFz"
                 }
               },
               "runAfter": {}
