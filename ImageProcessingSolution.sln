@@ -9,6 +9,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ImageConsumer", "ImageConsu
 EndProject
 Project("{151D2E53-A2C4-4D7D-83FE-D05416EBD58E}") = "LogicAppScheduler", "LogicAppScheduler\LogicAppScheduler.deployproj", "{223EFE9C-1606-4E39-B5F3-EBCBF39D124C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Project Notes", "Project Notes", "{844F9FE1-C0FD-4149-90D2-C744E7E37ACB}"
+	ProjectSection(SolutionItems) = preProject
+		LogicAppExecution.PNG = LogicAppExecution.PNG
+		ProjectNotes.txt = ProjectNotes.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
