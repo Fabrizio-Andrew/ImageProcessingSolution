@@ -1,9 +1,6 @@
 using Microsoft.Azure.WebJobs;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Configuration;
 using System.Threading.Tasks;
 using Microsoft.WindowsAzure.Storage;
@@ -13,9 +10,6 @@ using Microsoft.WindowsAzure.Storage.Table;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 using ImageProcessor;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.PixelFormats;
 using ImageConsumer.Jobs;
 using ImageConsumer.Settings;
 
@@ -23,8 +17,7 @@ namespace ImageConsumer
 {
     public class Functions
     {
-        // This function will get triggered/executed when a new message is written 
-        // on an Azure Queue called queue.
+        // This function is triggered manually
         [NoAutomaticTrigger]
         public async Task ProcessJobsOnDemand(TextWriter log)
         {
@@ -59,7 +52,6 @@ namespace ImageConsumer
 
 
                 // Get the first message from queue
-
                 CloudQueueMessage message = await queue.GetMessageAsync();
                 while (message != null)
                 {
@@ -67,7 +59,6 @@ namespace ImageConsumer
                     // Retrieve the table entry for the job
                     TableOperation retrieveOperation = TableOperation.Retrieve<JobEntity>(ConfigSettings.IMAGEJOBS_PARTITIONKEY, message.AsString);
                     TableResult retrievedResult = table.ExecuteAsync(retrieveOperation).ConfigureAwait(false).GetAwaiter().GetResult();
-
                     JobEntity job = retrievedResult.Result as JobEntity;
 
                     // Retrieve the blob name from the imageSource url string
@@ -75,7 +66,7 @@ namespace ImageConsumer
                     string blobName = urlSplit[3];
 
                     // Convert the image represented in the retrieved result
-                    await ConvertAndStoreImage(storageAccount, blobName, job.imageConversionMode, message.AsString, job.imageSource);
+                    await ConvertAndStoreImage(storageAccount, blobName, job.imageConversionMode, message.AsString);
 
                     // Delete the queue message
                     await queue.DeleteMessageAsync(message);
@@ -89,7 +80,6 @@ namespace ImageConsumer
                 log.WriteLine(ex);
             }
         }
-
 
         /// <summary>
         /// Updates the job entity status.
@@ -137,7 +127,6 @@ namespace ImageConsumer
             queue.CreateIfNotExists();
 
             return queue;
-
         }
 
 
@@ -151,16 +140,15 @@ namespace ImageConsumer
         /// <param name="failedImagesContainer"></param>
         /// <param name="jobId"></param>
         /// <param name="imageSource"></param>
-        public static async Task ConvertAndStoreImage(CloudStorageAccount storageAccount, string blobName, int imageConversionMode, string jobId, string imageSource)
+        public static async Task ConvertAndStoreImage(CloudStorageAccount storageAccount, string blobName, int imageConversionMode, string jobId)
         {
-            string convertedBlobName = $"{Guid.NewGuid()}-{blobName}";
+            // Set the name of the converted blob to the same as the uploaded blob
+            string convertedBlobName = blobName;
 
             try
             {
                 // Update Job Status - about to convert image
                 await UpdateJobEntityStatus(storageAccount, jobId, 2, "Job is running.");
-
-                //(MemoryStream memoryStream, string contentType) = await _storageRepository.GetFileAsync(ConfigSettings.UPLOADEDIMAGES_CONTAINERNAME, id);
 
                 // Get the Blob Container Client
                 BlobServiceClient blobServiceClient = new BlobServiceClient(ConfigurationManager.ConnectionStrings["AzureWebJobsStorage"].ConnectionString);
@@ -217,8 +205,6 @@ namespace ImageConsumer
                             bool created = await convertedImagesContainer.CreateIfNotExistsAsync();
 
                             CloudBlockBlob convertedBlockBlob = convertedImagesContainer.GetBlockBlobReference(convertedBlobName);
-
-                            //convertedBlockBlob.Metadata.Add(ConfigSettings.JOBID_METADATA_NAME, jobId);
 
                             // Upload the converted blob to the converted images container
                             convertedBlockBlob.Properties.ContentType = System.Net.Mime.MediaTypeNames.Image.Jpeg;

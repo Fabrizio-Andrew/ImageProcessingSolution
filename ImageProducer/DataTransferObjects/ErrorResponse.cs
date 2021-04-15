@@ -18,7 +18,7 @@
         /// <param name="parameterName">The name of the offending parameter</param>
         /// <param name="parameterValue">The offening parameter value</param>
         /// <returns>An ErrorResponse Object</returns>
-        public static ErrorResponse GenerateErrorResponse(int? errorNumber, string? errorMessage, string parameterName, string parameterValue)
+        public static ErrorResponse GenerateErrorResponse(int? errorNumber, string? errorMessage, string parameterName, string parameterValue, string values = null)
         {
 
             switch (errorNumber)
@@ -34,12 +34,12 @@
                         return errorResponse;
                     }
                 case 2:
-                    {   
+                    {
                         ErrorResponse errorResponse = new ErrorResponse {
                             errorNumber = errorNumber,
                             parameterName = parameterName,
                             parameterValue = parameterValue,
-                            errorDescription = "The parameter provided is invalid. Valid parameter values are [X]"
+                            errorDescription = "The parameter provided is invalid. Valid parameter values are: " + values 
                         };
                         return errorResponse;
                     }

@@ -1,13 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using Azure;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using ImageProducer.Exceptions;
 using ImageProducer.Settings;
 using ImageProducer.DataTransferObjects;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Azure.Storage;
 using Microsoft.Azure.Storage.Blob;
 
@@ -18,9 +15,6 @@ namespace ImageProducer.Repositories
         private BlobContainerClient _blobContainerClient;
         private BlobServiceClient _blobServiceClient;
         private IStorageAccountSettings _storageAccountSettings;
-
-        // I don't think I need Picture Settings at all.///////////////////////////////////////
-        //private IPictureSettings _pictureSettings;
 
         private bool IsInitialized { get; set; }
 

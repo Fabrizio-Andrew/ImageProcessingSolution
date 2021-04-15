@@ -1,12 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using System;
 using System.Collections;
 using System.Threading.Tasks;
-using ImageProducer.Jobs;
 using ImageProducer.Settings;
 using ImageProducer.DataTransferObjects;
 

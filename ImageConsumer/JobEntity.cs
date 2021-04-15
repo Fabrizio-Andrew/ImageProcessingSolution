@@ -1,9 +1,4 @@
 using Microsoft.WindowsAzure.Storage.Table;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ImageConsumer.Jobs
 {
@@ -16,5 +11,7 @@ namespace ImageConsumer.Jobs
         public string statusDescription { get; set; }
 
         public string imageSource { get; set; }
+
+        public string imageResult { get; set; }
     }
 }
